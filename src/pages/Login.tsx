@@ -1,25 +1,41 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { LogIn, Mail, Lock } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogIn, Mail, Lock } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate()
-  const login = useAuthStore(state => state.login)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Simulate login (in a real app, you'd validate credentials against a backend)
-    login({
-      id: '1',
-      name: 'John Doe',
-      email: email,
-      address: '123 Main St, City'
-    })
-    navigate('/profile')
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),  // Envoie l'email et le mot de passe
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Connexion réussie, on récupère les infos utilisateur
+        login(data.user);  // Stocke l'utilisateur dans le store Zustand
+        navigate('/profile');  // Redirige vers le profil
+      } else {
+        setError(data.message || 'Login failed');
+      }
+    } catch (err) {
+      setError('Server error, please try again later');
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto">
@@ -57,6 +73,7 @@ const Login: React.FC = () => {
             <Lock className="absolute left-3 top-2 text-gray-500" />
           </div>
         </div>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="flex items-center justify-between">
           <button
             type="submit"
@@ -71,7 +88,7 @@ const Login: React.FC = () => {
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

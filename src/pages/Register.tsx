@@ -1,55 +1,105 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { UserPlus, User, Mail, Lock, MapPin } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Phone, UserPlus, User, Mail, Lock, MapPin } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 const Register: React.FC = () => {
-  const navigate = useNavigate()
-  const login = useAuthStore(state => state.login)
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
   const [formData, setFormData] = useState({
-    name: '',
+    nom: '',
+    prenom: '',
+    age: '',
     email: '',
     password: '',
-    address: '',
-  })
+    telephone: '',
+    adresse: '',
+  });
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prevData => ({ ...prevData, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Simulate user registration
-    const newUser = {
-      id: Date.now().toString(),
-      name: formData.name,
-      email: formData.email,
-      address: formData.address,
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),  // Utilise `formData` directement
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Simule la connexion après enregistrement réussi
+        login(data.user);
+        navigate('/profile');
+      } else {
+        setError(data.message || 'Registration failed');
+      }
+    } catch (err) {
+      setError('Server error, please try again later');
     }
-    login(newUser)
-    navigate('/profile')
-  }
+  };
 
   return (
     <div className="max-w-md mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-center">Create an Account</h1>
       <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-8">
         <div className="mb-4">
-          <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
+          <label htmlFor="nom" className="block text-gray-700 text-sm font-bold mb-2">
             Full Name
           </label>
           <div className="relative">
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="nom"
+              name="nom"
+              value={formData.nom}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
               required
             />
             <User className="absolute left-3 top-2 text-gray-500" />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="prenom" className="block text-gray-700 text-sm font-bold mb-2">
+            First Name
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              id="prenom"
+              name="prenom"
+              value={formData.prenom}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+              required
+            />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="age" className="block text-gray-700 text-sm font-bold mb-2">
+            Age
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              id="age"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+              required
+            />
           </div>
         </div>
         <div className="mb-4">
@@ -86,16 +136,33 @@ const Register: React.FC = () => {
             <Lock className="absolute left-3 top-2 text-gray-500" />
           </div>
         </div>
-        <div className="mb-6">
-          <label htmlFor="address" className="block text-gray-700 text-sm font-bold mb-2">
+        <div className="mb-4">
+          <label htmlFor="telephone" className="block text-gray-700 text-sm font-bold mb-2">
+            Telephone
+          </label>
+          <div className="relative">
+          <input
+            type="tel"
+            id="telephone"
+            name="telephone"
+            value={formData.telephone}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+            required
+          />
+          <Phone className="absolute left-3 top-2 text-gray-500" />  {/* Ajout de l'icône ici */}
+          </div>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="adresse" className="block text-gray-700 text-sm font-bold mb-2">
             Address
           </label>
           <div className="relative">
             <input
               type="text"
-              id="address"
-              name="address"
-              value={formData.address}
+              id="adresse"
+              name="adresse"
+              value={formData.adresse}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
               required
@@ -103,6 +170,7 @@ const Register: React.FC = () => {
             <MapPin className="absolute left-3 top-2 text-gray-500" />
           </div>
         </div>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="flex items-center justify-between">
           <button
             type="submit"
@@ -117,7 +185,7 @@ const Register: React.FC = () => {
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

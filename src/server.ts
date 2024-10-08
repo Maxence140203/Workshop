@@ -114,7 +114,69 @@ app.post('/login', async (req: typeof postRequest, res: typeof postResponse) => 
   }
 });
 
+// Route de profil
+app.get('/profile', async (req: typeof postRequest, res: typeof postResponse) => {
+  const { email } = req.query;
+  console.log('Profile');
+  try {
+    console.log('Email reçu pour la recherche de profil:', email);
 
+    const connection = await mysql.createConnection(dbConfig);
+    console.log('Connexion à la base de données réussie');
+
+    // Récupération des informations de l'utilisateur
+    const [rows] = await connection.execute<any[]>(
+      'SELECT * FROM user_info WHERE email = ?',
+      [email]
+    );
+
+    if (rows.length === 0) {
+      console.log('Aucun utilisateur trouvé');
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = rows[0];
+    console.log('Utilisateur trouvé:', user);
+
+    // Récupération des réservations
+    const [reservations] = await connection.execute<any[]>(
+      'SELECT * FROM user_reservations WHERE id_patient = ?',
+      [user.id]
+    );
+
+    // Si aucune réservation n'est trouvée, renvoyer un tableau vide
+    const userReservations = reservations.length > 0 ? reservations : [];
+    console.log('Réservations trouvées ou tableau vide:', userReservations);
+
+    // Réponse JSON avec un tableau vide s'il n'y a pas de réservations
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        nom: user.nom,
+        prenom: user.prenom,
+        age: user.age,
+        email: user.email,
+        telephone: user.telephone,
+        adresse: user.adresse,
+        reservations: userReservations,  // ou un tableau vide s'il n'y a pas de réservations
+      },
+    });    
+
+    console.log('Réponse JSON envoyée');
+    connection.end();
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Erreur lors de la recherche de profil:', error.message);
+      res.status(500).json({ success: false, message: 'Database error', error: error.message });
+    } else {
+      console.error('Erreur inconnue:', error);
+      res.status(500).json({ success: false, message: 'Unknown error' });
+    }
+  }
+});
+
+// Démarrer le serveur
 app.listen(3001, () => {
   console.log('Server is running on port 3001');
 });

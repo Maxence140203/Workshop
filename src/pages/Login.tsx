@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       if (response.ok) {
         // Connexion réussie, on récupère les infos utilisateur
         login(data.user);  // Stocke l'utilisateur dans le store Zustand
-        navigate('/profile');  // Redirige vers le profil
+        navigate(`/profile?email=${data.user.email}`);  // Redirige vers le profil
       } else {
         setError(data.message || 'Login failed');
       }

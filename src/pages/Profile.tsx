@@ -1,26 +1,79 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { User, Bell, MapPin, Calendar } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 
-// Mock reservations data (in a real app, this would come from an API)
-const mockReservations = [
-  { id: 1, serviceName: 'Mobile Clinic', date: '2023-05-15', time: '10:00' },
-  { id: 2, serviceName: 'Admin Vehicle', date: '2023-05-20', time: '14:00' },
-]
-
 const Profile: React.FC = () => {
-  const user = useAuthStore(state => state.user)
+  const userFromStore = useAuthStore(state => state.user)
+  const [user, setUser] = useState<any>(null)
+  const [reservations, setReservations] = useState<any[]>([]) // Ajout d'un état pour les réservations
   const [notificationPreferences, setNotificationPreferences] = useState({
     email: true,
     sms: false,
     push: true,
   })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // Fonction pour récupérer le profil utilisateur
+  const fetchUserProfile = async (email: string) => {
+    try {
+      const response = await fetch(`/profile?email=${user.email}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('User:', user); // Log la réponse
+      console.log('Content-Type:', response.headers.get('content-type')); // Vérifier le type de contenu
+      console.log('Status:', response.status); // Vérifier le code de statut
+  
+      // Vérifie si la réponse est de type JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('La réponse n\'est pas un JSON valide');
+      }
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+      }
+  
+      const data = await response.json(); // Parse la réponse si elle est bien au format JSON
+      if (data.success) {
+        setUser(data.user);
+        setReservations(data.user.reservations);
+      } else {
+        setError(data.message || 'User not found');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }    
+
+  useEffect(() => {
+    if (userFromStore?.email) {
+      fetchUserProfile(userFromStore.email);
+    } else {
+      setLoading(false);
+      setError('Please log in to view your profile.');
+    }
+  }, [userFromStore])  
 
   const handleNotificationChange = (type: keyof typeof notificationPreferences) => {
     setNotificationPreferences(prev => ({
       ...prev,
       [type]: !prev[type],
     }))
+  }
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
+  if (error) {
+    return <div>{error}</div>
   }
 
   if (!user) {
@@ -34,15 +87,15 @@ const Profile: React.FC = () => {
         <div className="flex items-center mb-6">
           <User size={64} className="text-blue-600 mr-4" />
           <div>
-            <h2 className="text-2xl font-semibold">{user.name}</h2>
-            <p className="text-gray-600">{user.email}</p>
+            <h2 className="text-2xl font-semibold">{user.nom || 'No Name'}</h2>
+            <p className="text-gray-600">{user.email || 'No Email'}</p>
           </div>
         </div>
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">Address</h3>
           <p className="flex items-center">
             <MapPin className="mr-2 text-blue-600" />
-            {user.address}
+            {user.adresse || 'No Address'}
           </p>
         </div>
       </div>
@@ -68,9 +121,9 @@ const Profile: React.FC = () => {
       </div>
       <div className="bg-white shadow-md rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4">Your Reservations</h3>
-        {mockReservations.length > 0 ? (
+        {reservations.length > 0 ? (
           <ul className="space-y-4">
-            {mockReservations.map(reservation => (
+            {reservations.map(reservation => (
               <li key={reservation.id} className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center">
                   <Calendar className="mr-2 text-blue-600" />

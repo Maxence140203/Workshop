@@ -1,14 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { Ambulance, Briefcase, Calendar } from 'lucide-react';
-import ReservationModal from '../components/ReservationModal';
+import { Ambulance, Briefcase } from 'lucide-react';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';
 
 type Service = {
   id: number;
+  nom: string; // Mise à jour pour refléter 'nom' au lieu de 'name'
   type: 'medical' | 'administrative';
-  name: string;
   latitude: number;
   longitude: number;
 };
@@ -26,28 +25,20 @@ const center = {
 const MapView: React.FC = () => {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<Service | null>(null);
-  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [services, setServices] = useState<Service[]>([]); // Liste des services récupérés de la BDD
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
-  const [services, setServices] = useState<Service[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Vérifier si un token est présent dans le localStorage
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
-
-  // Charger les services à partir de l'API
-  useEffect(() => {
+    // Requête vers votre API pour récupérer les points de services
     const fetchServices = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/services');
+        const response = await fetch('http://localhost:3001/api/services'); // URL de l'API côté backend
         const data = await response.json();
         if (data.success) {
-          setServices(data.services);
+          setServices(data.services); // Stocker les services récupérés
         } else {
           console.error('Erreur lors de la récupération des services:', data.message);
         }
@@ -59,17 +50,12 @@ const MapView: React.FC = () => {
     fetchServices();
   }, []);
 
-  const onMapClick = useCallback(() => {
-    setSelectedMarker(null);
-  }, []);
+  const handleMarkerClick = (service: Service) => {
+    setSelectedMarker(service);
+  };
 
-  const handleReservation = (service: Service) => {
-    if (isAuthenticated) {
-      setSelectedMarker(service);
-      setIsReservationModalOpen(true);
-    } else {
-      alert('Veuillez vous connecter pour faire une réservation.');
-    }
+  const handleCloseInfoWindow = () => {
+    setSelectedMarker(null);
   };
 
   if (!isLoaded) return <div>Chargement...</div>;
@@ -95,8 +81,9 @@ const MapView: React.FC = () => {
         mapContainerStyle={mapContainerStyle}
         center={center}
         zoom={6}
-        onClick={onMapClick}
-        options={{ streetViewControl: false }}
+        options={{
+          streetViewControl: false, // Désactiver Street View
+        }}
       >
         {services
           .filter(service => !selectedService || service.type === selectedService)
@@ -104,7 +91,7 @@ const MapView: React.FC = () => {
             <Marker
               key={service.id}
               position={{ lat: service.latitude, lng: service.longitude }}
-              onClick={() => handleReservation(service)}
+              onClick={() => handleMarkerClick(service)}
               icon={{
                 url: service.type === 'medical' ? '/ambulance-icon.svg' : '/briefcase-icon.svg',
                 scaledSize: new window.google.maps.Size(30, 30),
@@ -115,52 +102,15 @@ const MapView: React.FC = () => {
         {selectedMarker && (
           <InfoWindow
             position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
-            onCloseClick={() => setSelectedMarker(null)}
+            onCloseClick={handleCloseInfoWindow}
           >
             <div>
-              <h3 className="font-bold">{selectedMarker.name}</h3>
+              <h3 className="font-bold">{selectedMarker.nom}</h3> {/* Mise à jour pour utiliser 'nom' */}
               <p>{selectedMarker.type === 'medical' ? 'Service Médical' : 'Service Administratif'}</p>
-              <button
-                className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                onClick={() => setIsReservationModalOpen(true)}
-              >
-                Notifier
-              </button>
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
-      <div className="mt-4">
-        <h2 className="text-xl font-semibold mb-2">Services à Proximité</h2>
-        <ul>
-          {services
-            .filter(service => !selectedService || service.type === selectedService)
-            .map(service => (
-              <li key={service.id} className="flex items-center mb-2">
-                {service.type === 'medical' ? (
-                  <Ambulance className="mr-2 text-red-500" />
-                ) : (
-                  <Briefcase className="mr-2 text-blue-500" />
-                )}
-                <span>{service.name}</span>
-                <button
-                  className="ml-auto bg-blue-500 text-white px-2 py-1 rounded text-sm flex items-center"
-                  onClick={() => handleReservation(service)}
-                >
-                  <Calendar className="mr-1" size={16} />
-                  Notifier
-                </button>
-              </li>
-            ))}
-        </ul>
-      </div>
-      {selectedMarker && (
-        <ReservationModal
-          isOpen={isReservationModalOpen}
-          onClose={() => setIsReservationModalOpen(false)}
-          service={selectedMarker}
-        />
-      )}
     </div>
   );
 };

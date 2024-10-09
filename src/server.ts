@@ -207,18 +207,18 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
 app.get('/api/services', async (req: Request, res: Response) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [services] = await connection.execute<any[]>(
-      'SELECT id, type, name, latitude, longitude FROM services'
-    );
+    const [rows] = await connection.execute<any[]>('SELECT * FROM services');
     connection.end();
-    res.json({ success: true, services });
+
+    res.json({ success: true, services: rows });
   } catch (error) {
     console.error('Erreur lors de la récupération des services:', error);
-    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des services' });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 });
 
+
 // Start server
-app.listen(3001, () => {
+app.listen(3001, '0.0.0.0', () => {
   console.log('Server is running on port 3001');
 });

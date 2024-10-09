@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Ambulance, User, LogIn, Truck } from 'lucide-react';
+import { Ambulance, User, LogIn, Truck, MapPin } from 'lucide-react';
 
 const Header: React.FC = () => {
   const [session, setSession] = useState<{ loggedIn: boolean } | null>(null);
@@ -26,18 +26,24 @@ const Header: React.FC = () => {
         </Link>
         <nav>
           <ul className="flex space-x-4 items-center">
-            <li><Link to="/map" className="hover:text-blue-200">Carte</Link></li>
+            <li>
+              <Link to="/map" className="hover:text-black flex items-center">
+                <MapPin size={20} className="mr-2" />
+                <span>Carte</span>
+              </Link>
+            </li>
+
             {session ? (
               <>
-                <li><Link to="/profile" className="hover:text-blue-200"><User /></Link></li>
+                <li><Link to="/profile" className="hover:text-black"><User /></Link></li>
                 <li>
-                  <button onClick={handleLogout} className="hover:text-blue-200">
+                  <button onClick={handleLogout} className="hover:text-black">
                     Déconnexion
                   </button>
                 </li>
               </>
             ) : (
-              <li><Link to="/login" className="hover:text-blue-200"><LogIn /></Link></li>
+              <li><Link to="/login" className="hover:text-black"><LogIn /></Link></li>
             )}
           </ul>
         </nav>

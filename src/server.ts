@@ -23,7 +23,7 @@ const dbConfig = {
 };
 
 // Route d'enregistrement
-app.post('/register', async (req: Request, res: Response): Promise<void> => {
+app.post('/api/register', async (req: Request, res: Response): Promise<void> => {
   const { nom, prenom, age, email, password, telephone, adresse } = req.body;
 
   try {
@@ -61,7 +61,7 @@ app.post('/register', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Route de connexion (Login Route)
-app.post('/login', async (req: Request, res: Response): Promise<void> => {
+app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
@@ -141,7 +141,7 @@ const authenticateJWT = (req: Request & { user?: any }, res: Response, next: Nex
 };
 
 // Route de profil (protected)
-app.get('/profile', authenticateJWT, async (req: Request & { user?: any }, res: Response): Promise<void> => {
+app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, res: Response): Promise<void> => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
@@ -202,6 +202,20 @@ app.get('/profile', authenticateJWT, async (req: Request & { user?: any }, res: 
       res.status(500).json({ success: false, message: 'Database error' });
     }
   });
+});
+
+app.get('/api/services', async (req: Request, res: Response) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [services] = await connection.execute<any[]>(
+      'SELECT id, type, name, latitude, longitude FROM services'
+    );
+    connection.end();
+    res.json({ success: true, services });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des services:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des services' });
+  }
 });
 
 // Start server

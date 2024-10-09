@@ -18,14 +18,14 @@ const Profile: React.FC = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      setError('No authentication token found. Please log in.');
+      setError("Aucun token d'authentification trouvé. Veuillez vous connecter.");
       setLoading(false);
       navigate('/login');
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:3001/profile', {
+      const response = await fetch('http://localhost:3001/api/profile', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ const Profile: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+        throw new Error(`Erreur lors de la récupération du profil utilisateur : ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -42,10 +42,10 @@ const Profile: React.FC = () => {
         setUser(data.user);
         setReservations(data.user.reservations);
       } else {
-        setError(data.message || 'User not found');
+        setError(data.message || 'Utilisateur non trouvé');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ const Profile: React.FC = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Chargement...</div>;
   }
 
   if (error) {
@@ -71,30 +71,30 @@ const Profile: React.FC = () => {
   }
 
   if (!user) {
-    return <div>Please log in to view your profile.</div>;
+    return <div>Veuillez vous connecter pour voir votre profil.</div>;
   }
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">User Profile</h1>
+      <h1 className="text-3xl font-bold mb-8">Profil Utilisateur</h1>
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">
         <div className="flex items-center mb-6">
           <User size={64} className="text-blue-600 mr-4" />
           <div>
-            <h2 className="text-2xl font-semibold">{user.nom || 'No Name'}</h2>
-            <p className="text-gray-600">{user.email || 'No Email'}</p>
+            <h2 className="text-2xl font-semibold">{user.nom || 'Nom non disponible'}</h2>
+            <p className="text-gray-600">{user.email || 'Email non disponible'}</p>
           </div>
         </div>
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Address</h3>
+          <h3 className="text-lg font-semibold mb-2">Adresse</h3>
           <p className="flex items-center">
             <MapPin className="mr-2 text-blue-600" />
-            {user.adresse || 'No Address'}
+            {user.adresse || 'Adresse non disponible'}
           </p>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">Notification Preferences</h3>
+        <h3 className="text-lg font-semibold mb-4">Préférences de Notification</h3>
         <div className="space-y-4">
           {Object.entries(notificationPreferences).map(([type, enabled]) => (
             <div key={type} className="flex items-center">
@@ -114,7 +114,7 @@ const Profile: React.FC = () => {
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Your Reservations</h3>
+        <h3 className="text-lg font-semibold mb-4">Vos Notifications</h3>
         {reservations.length > 0 ? (
           <ul className="space-y-4">
             {reservations.map(reservation => (
@@ -124,13 +124,13 @@ const Profile: React.FC = () => {
                   <span>{reservation.serviceName}</span>
                 </div>
                 <div className="text-gray-600">
-                  {reservation.date} at {reservation.time}
+                  {reservation.date} à {reservation.time}
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p>You have no upcoming reservations.</p>
+          <p>Vous n'avez aucune notifications à venir.</p>
         )}
       </div>
     </div>

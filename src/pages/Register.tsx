@@ -25,29 +25,33 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
+  
     try {
       const response = await fetch('http://localhost:3001/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),  // Utilise `formData` directement
+        body: JSON.stringify(formData),
       });
-
+  
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid JSON response');
+      }
+  
       const data = await response.json();
-
       if (response.ok) {
-        // Simule la connexion après enregistrement réussi
         login(data.user);
         navigate('/profile');
       } else {
         setError(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Server error, please try again later');
+      setError(err instanceof Error ? err.message : 'Server error, please try again later');
     }
   };
+  
 
   return (
     <div className="max-w-md mx-auto">

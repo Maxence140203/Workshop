@@ -1,92 +1,80 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
+import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
 
     try {
       const response = await fetch('http://localhost:3001/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),  // Envoie l'email et le mot de passe
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Connexion réussie, on récupère les infos utilisateur
-        login(data.user);  // Stocke l'utilisateur dans le store Zustand
-        navigate(`/profile?email=${data.user.email}`);  // Redirige vers le profil
+        localStorage.setItem('token', data.token);
+        navigate('/profile');
       } else {
         setError(data.message || 'Login failed');
       }
     } catch (err) {
-      setError('Server error, please try again later');
+      setError('Server error, please try again later.');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-center">Login</h1>
-      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-8">
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-            Email
-          </label>
-          <div className="relative">
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md bg-white shadow-md rounded-lg p-8">
+        <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+              Email
+            </label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-            <Mail className="absolute left-3 top-2 text-gray-500" />
           </div>
-        </div>
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-            Password
-          </label>
-          <div className="relative">
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-gray-700 font-bold mb-2">
+              Password
+            </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-            <Lock className="absolute left-3 top-2 text-gray-500" />
           </div>
-        </div>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <div className="flex items-center justify-between">
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <LogIn className="mr-2" />
-            Sign In
+            Log In
           </button>
-          <Link to="/register" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
-            Create an account
-          </Link>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

@@ -1,44 +1,43 @@
-import React, { useEffect, useState } from 'react'
-import { User, Bell, MapPin, Calendar } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User, Bell, MapPin, Calendar } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const userFromStore = useAuthStore(state => state.user)
-  const [user, setUser] = useState<any>(null)
-  const [reservations, setReservations] = useState<any[]>([]) // Ajout d'un état pour les réservations
+  const [user, setUser] = useState<any>(null);
+  const [reservations, setReservations] = useState<any[]>([]);
   const [notificationPreferences, setNotificationPreferences] = useState({
     email: true,
     sms: false,
     push: true,
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  // Fonction pour récupérer le profil utilisateur
-  const fetchUserProfile = async (email: string) => {
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setError('No authentication token found. Please log in.');
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+
     try {
-      const response = await fetch(`/profile?email=${user.email}`, {
+      const response = await fetch('http://localhost:3001/profile', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
-      
-      console.log('User:', user); // Log la réponse
-      console.log('Content-Type:', response.headers.get('content-type')); // Vérifier le type de contenu
-      console.log('Status:', response.status); // Vérifier le code de statut
-  
-      // Vérifie si la réponse est de type JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('La réponse n\'est pas un JSON valide');
-      }
-  
+
       if (!response.ok) {
         throw new Error(`Failed to fetch user profile: ${response.statusText}`);
       }
-  
-      const data = await response.json(); // Parse la réponse si elle est bien au format JSON
+
+      const data = await response.json();
       if (data.success) {
         setUser(data.user);
         setReservations(data.user.reservations);
@@ -50,34 +49,29 @@ const Profile: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }    
+  };
 
   useEffect(() => {
-    if (userFromStore?.email) {
-      fetchUserProfile(userFromStore.email);
-    } else {
-      setLoading(false);
-      setError('Please log in to view your profile.');
-    }
-  }, [userFromStore])  
+    fetchUserProfile();
+  }, []);
 
   const handleNotificationChange = (type: keyof typeof notificationPreferences) => {
     setNotificationPreferences(prev => ({
       ...prev,
       [type]: !prev[type],
-    }))
-  }
+    }));
+  };
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return <div>{error}</div>
+    return <div>{error}</div>;
   }
 
   if (!user) {
-    return <div>Please log in to view your profile.</div>
+    return <div>Please log in to view your profile.</div>;
   }
 
   return (
@@ -140,7 +134,7 @@ const Profile: React.FC = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

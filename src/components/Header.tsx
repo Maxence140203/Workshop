@@ -1,11 +1,21 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { Ambulance, User, LogIn, Truck } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Ambulance, User, LogIn, Truck } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
-  const logout = useAuthStore(state => state.logout)
+  const [session, setSession] = useState<{ loggedIn: boolean } | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setSession(token ? { loggedIn: true } : null);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setSession(null);
+    navigate('/login');
+  };
 
   return (
     <header className="bg-blue-600 text-white">
@@ -17,19 +27,17 @@ const Header: React.FC = () => {
         <nav>
           <ul className="flex space-x-4 items-center">
             <li><Link to="/map" className="hover:text-blue-200">Carte</Link></li>
-            {isAuthenticated && (
-              <li>
-                <Link to="/case-selection" className="hover:text-blue-200 flex items-center">
-                  <Truck className="mr-1" size={20} />
-                  Gestion des cas
-                </Link>
-              </li>
-            )}
-            {isAuthenticated ? (
+            {session ? (
               <>
+                <li>
+                  <Link to="/case-selection" className="hover:text-blue-200 flex items-center">
+                    <Truck className="mr-1" size={20} />
+                    Gestion des cas
+                  </Link>
+                </li>
                 <li><Link to="/profile" className="hover:text-blue-200"><User /></Link></li>
                 <li>
-                  <button onClick={logout} className="hover:text-blue-200">
+                  <button onClick={handleLogout} className="hover:text-blue-200">
                     Déconnexion
                   </button>
                 </li>
@@ -41,7 +49,7 @@ const Header: React.FC = () => {
         </nav>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

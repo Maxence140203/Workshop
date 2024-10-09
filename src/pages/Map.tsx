@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api'
 import { Ambulance, Briefcase, Calendar } from 'lucide-react'
 import ReservationModal from '../components/ReservationModal'
-import { useAuthStore } from '../stores/authStore'
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc'
 
@@ -39,7 +38,17 @@ const MapView: React.FC = () => {
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY
   })
-  const { isAuthenticated } = useAuthStore()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // Check if token exists in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, []);
 
   const onMapClick = useCallback(() => {
     setSelectedMarker(null)

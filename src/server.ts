@@ -1,15 +1,18 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',  // Frontend origin
+  credentials: true,                // Allow credentials (cookies, sessions, etc.)
+}));
 
-// Forcer le typage à "any"
-const postRequest: any = express.request;
-const postResponse: any = express.response;
+const JWT_SECRET = 'your_secret_key'; // Replace with a strong secret key
+const JWT_EXPIRES_IN = '15m';         // Token expires in 15 minutes
 
 const dbConfig = {
   host: '127.0.0.1',
@@ -20,15 +23,13 @@ const dbConfig = {
 };
 
 // Route d'enregistrement
-app.post('/register', async (req: typeof postRequest, res: typeof postResponse) => {
+app.post('/register', async (req: Request, res: Response): Promise<void> => {
   const { nom, prenom, age, email, password, telephone, adresse } = req.body;
 
   try {
-    console.log('Données reçues:', { nom, prenom, age, email, password, telephone, adresse }); // Log des données reçues
+    console.log('Données reçues:', { nom, prenom, age, email, password, telephone, adresse });
 
     const connection = await mysql.createConnection(dbConfig);
-    
-    // Log avant la requête de vérification
     console.log('Connexion à la base de données réussie');
 
     const [existingUser] = await connection.execute<any[]>(
@@ -37,12 +38,13 @@ app.post('/register', async (req: typeof postRequest, res: typeof postResponse) 
     );
 
     if (existingUser.length > 0) {
-      console.log('Utilisateur existant trouvé'); // Log si l'utilisateur existe
-      return res.status(400).json({ success: false, message: 'User already exists' });
+      console.log('Utilisateur existant trouvé');
+      res.status(400).json({ success: false, message: 'User already exists' });
+      return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('Mot de passe haché:', hashedPassword); // Log après hachage
+    console.log('Mot de passe haché:', hashedPassword);
 
     await connection.execute(
       'INSERT INTO user_info (nom, prenom, age, email, password, telephone, adresse) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -50,24 +52,22 @@ app.post('/register', async (req: typeof postRequest, res: typeof postResponse) 
     );
 
     connection.end();
-    console.log('Utilisateur enregistré avec succès'); // Log si tout est réussi
+    console.log('Utilisateur enregistré avec succès');
     res.json({ success: true, message: 'User registered successfully' });
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement:', error); // Log de l'erreur
+    console.error('Erreur lors de l\'enregistrement:', error);
     res.status(500).json({ success: false, message: 'Database error' });
   }
 });
 
-// Route de connexion
-app.post('/login', async (req: typeof postRequest, res: typeof postResponse) => {
+// Route de connexion (Login Route)
+app.post('/login', async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
-    console.log('Données de connexion reçues:', { email, password }); // Log des données reçues
+    console.log('Données de connexion reçues:', { email, password });
 
     const connection = await mysql.createConnection(dbConfig);
-
-    // Log avant la requête de vérification
     console.log('Connexion à la base de données réussie');
 
     const [rows] = await connection.execute<any[]>(
@@ -76,107 +76,135 @@ app.post('/login', async (req: typeof postRequest, res: typeof postResponse) => 
     );
 
     if (rows.length === 0) {
-      console.log('Aucun utilisateur trouvé avec cet email'); // Log si aucun utilisateur n'est trouvé
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    const user = rows[0];
-    console.log('Utilisateur trouvé:', user); // Log les informations de l'utilisateur trouvé
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log('Résultat de la comparaison des mots de passe:', passwordMatch); // Log le résultat de la comparaison de mot de passe
-
-    if (!passwordMatch) {
-      console.log('Mot de passe incorrect'); // Log si le mot de passe ne correspond pas
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    // Log si tout est réussi
-    console.log('Connexion réussie pour l\'utilisateur:', user.email);
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        nom: user.nom,
-        prenom: user.prenom,
-        age: user.age,
-        email: user.email,
-        telephone: user.telephone,
-        adresse: user.adresse,
-      },
-    });
-    connection.end();
-    console.log('Connexion à la base de données fermée'); // Log lorsque la connexion est fermée
-  } catch (error) {
-    console.error('Erreur lors de la connexion:', error); // Log de l'erreur
-    res.status(500).json({ success: false, message: 'Database error' });
-  }
-});
-
-// Route de profil
-app.get('/profile', async (req: typeof postRequest, res: typeof postResponse) => {
-  const { email } = req.query;
-  console.log('Profile');
-  try {
-    console.log('Email reçu pour la recherche de profil:', email);
-
-    const connection = await mysql.createConnection(dbConfig);
-    console.log('Connexion à la base de données réussie');
-
-    // Récupération des informations de l'utilisateur
-    const [rows] = await connection.execute<any[]>(
-      'SELECT * FROM user_info WHERE email = ?',
-      [email]
-    );
-
-    if (rows.length === 0) {
-      console.log('Aucun utilisateur trouvé');
-      return res.status(404).json({ success: false, message: 'User not found' });
+      console.log('Aucun utilisateur trouvé avec cet email');
+      res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return;
     }
 
     const user = rows[0];
     console.log('Utilisateur trouvé:', user);
 
-    // Récupération des réservations
-    const [reservations] = await connection.execute<any[]>(
-      'SELECT * FROM user_reservations WHERE id_patient = ?',
-      [user.id]
-    );
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      console.log('Mot de passe incorrect');
+      res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return;
+    }
 
-    // Si aucune réservation n'est trouvée, renvoyer un tableau vide
-    const userReservations = reservations.length > 0 ? reservations : [];
-    console.log('Réservations trouvées ou tableau vide:', userReservations);
-
-    // Réponse JSON avec un tableau vide s'il n'y a pas de réservations
-    res.json({
-      success: true,
-      user: {
+    const token = jwt.sign(
+      {
         id: user.id,
         nom: user.nom,
         prenom: user.prenom,
-        age: user.age,
         email: user.email,
-        telephone: user.telephone,
-        adresse: user.adresse,
-        reservations: userReservations,  // ou un tableau vide s'il n'y a pas de réservations
       },
-    });    
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
 
-    console.log('Réponse JSON envoyée');
+    console.log('JWT généré:', token);  // Log le token généré
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,  // Le token JWT est envoyé au client
+    });
+
     connection.end();
+    console.log('Connexion fermée avec succès');
   } catch (error) {
-    if (error instanceof Error) {
-      console.error('Erreur lors de la recherche de profil:', error.message);
-      res.status(500).json({ success: false, message: 'Database error', error: error.message });
-    } else {
-      console.error('Erreur inconnue:', error);
-      res.status(500).json({ success: false, message: 'Unknown error' });
-    }
+    console.error('Erreur lors de la connexion:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
   }
 });
 
-// Démarrer le serveur
+
+
+// Middleware to verify JWT token
+const authenticateJWT = (req: Request & { user?: any }, res: Response, next: NextFunction): void => {
+  const token = req.headers.authorization?.split(' ')[1]; // Extract token from 'Bearer <token>'
+
+  if (!token) {
+    res.status(401).json({ success: false, message: 'No token provided' });
+    return;
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      res.status(403).json({ success: false, message: 'Token is not valid or expired' });
+      return;
+    }
+
+    req.user = user;  // Store user info from token in request object
+    next();
+  });
+};
+
+// Route de profil (protected)
+app.get('/profile', authenticateJWT, async (req: Request & { user?: any }, res: Response): Promise<void> => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    res.status(401).json({ success: false, message: 'No token provided' });
+    return;
+  }
+
+  jwt.verify(token, JWT_SECRET, async (err, decodedUser) => {
+    if (err) {
+      res.status(403).json({ success: false, message: 'Invalid token' });
+      return;
+    }
+
+    req.user = decodedUser;  // Store user info from token in request object
+
+    try {
+      const { id } = req.user;  // Get user ID from decoded token
+
+      const connection = await mysql.createConnection(dbConfig);
+      console.log('Database connection successful.');
+
+      const [rows] = await connection.execute<any[]>(
+        'SELECT * FROM user_info WHERE id = ?',
+        [id]
+      );
+
+      if (rows.length === 0) {
+        console.log('No user found with the provided ID.');
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      const user = rows[0];
+      console.log('User found:', user);
+
+      const [reservations] = await connection.execute<any[]>(
+        'SELECT * FROM user_reservations WHERE id_patient = ?',
+        [user.id]
+      );
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          nom: user.nom,
+          prenom: user.prenom,
+          age: user.age,
+          email: user.email,
+          telephone: user.telephone,
+          adresse: user.adresse,
+          reservations: reservations.length ? reservations : [],
+        },
+      });
+
+      connection.end();
+    } catch (error) {
+      console.error('Error occurred:', error);
+      res.status(500).json({ success: false, message: 'Database error' });
+    }
+  });
+});
+
+// Start server
 app.listen(3001, () => {
   console.log('Server is running on port 3001');
 });

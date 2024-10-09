@@ -22,7 +22,7 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        navigate('/profile');
+        window.location.href = '/profile';
       } else {
         setError(data.message || 'Login failed');
       }

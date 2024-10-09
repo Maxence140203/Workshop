@@ -29,12 +29,6 @@ const Header: React.FC = () => {
             <li><Link to="/map" className="hover:text-blue-200">Carte</Link></li>
             {session ? (
               <>
-                <li>
-                  <Link to="/case-selection" className="hover:text-blue-200 flex items-center">
-                    <Truck className="mr-1" size={20} />
-                    Gestion des cas
-                  </Link>
-                </li>
                 <li><Link to="/profile" className="hover:text-blue-200"><User /></Link></li>
                 <li>
                   <button onClick={handleLogout} className="hover:text-blue-200">

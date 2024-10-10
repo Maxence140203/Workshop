@@ -3,6 +3,19 @@ import mysql from 'mysql2/promise';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+
+// Define rate limiting for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 5, // Limit each IP to 5 login attempts per `window` (1 minute)
+  message: {
+    success: false,
+    message: 'Trop de tentatives de connexion, veuillez réessayer après une minute',
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false,  // Disable the `X-RateLimit-*` headers
+});
 
 const app = express();
 app.use(express.json());
@@ -101,8 +114,8 @@ app.post('/api/register_medecin', async (req: Request, res: Response): Promise<v
 });
 
 
-// Route de connexion (Login Route)
-app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
+// Apply the rate limiter middleware to the login route
+app.post('/api/login', loginLimiter, async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
@@ -159,6 +172,7 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ success: false, message: 'Database error' });
   }
 });
+
 
 
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Bell, MapPin, Calendar } from 'lucide-react';
+import { User, Bell, MapPin, Calendar, FilePlus } from 'lucide-react'; // Added FilePlus icon
 
 const Profile: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -12,6 +12,7 @@ const Profile: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [files, setFiles] = useState<File[]>([]); // State for uploaded files
   const navigate = useNavigate();
 
   const fetchUserProfile = async () => {
@@ -48,6 +49,12 @@ const Profile: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
     }
   };
 
@@ -113,7 +120,8 @@ const Profile: React.FC = () => {
           ))}
         </div>
       </div>
-      <div className="bg-white shadow-md rounded-lg p-6">
+
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Vos Notifications</h3>
         {reservations.length > 0 ? (
           <ul className="space-y-4">
@@ -131,6 +139,29 @@ const Profile: React.FC = () => {
           </ul>
         ) : (
           <p>Vous n'avez aucune notifications à venir.</p>
+        )}
+      </div>
+
+      {/* Fichiers Médicaux Upload Section */}
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4">Fichiers Médicaux</h3>
+        <div className="flex items-center">
+          <FilePlus className="mr-2 text-blue-600" />
+          <label htmlFor="medical-files" className="font-bold">Fichiers Médicaux</label>
+          <input
+            type="file"
+            id="medical-files"
+            multiple
+            onChange={handleFileChange}
+            className="ml-4"
+          />
+        </div>
+        {files.length > 0 && (
+          <ul className="mt-4">
+            {files.map((file, index) => (
+              <li key={index} className="text-gray-600">{file.name}</li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import DatePicker from 'react-datepicker';  // Importation de la bibliothèque de datepicker
 import 'react-datepicker/dist/react-datepicker.css'; // Importation du style pour le datepicker
+import { Geocoder } from '@react-google-maps/api';
+
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';
 
@@ -14,7 +16,7 @@ type Service = {
 
 const mapContainerStyle = {
   width: '100%',
-  height: '400px',
+  height: '600px', // Augmentation de la hauteur de la carte
 };
 
 const center = {
@@ -79,8 +81,10 @@ const MapView: React.FC = () => {
         const response = await fetch('http://localhost:3001/api/services');
         const data = await response.json();
         if (data.success) {
-          setServices(data.services);
-        } else {
+          setServices(data.services.map(service => ({
+            ...service,
+            date: new Date(service.date).toLocaleDateString(), // Convertir la date pour l'affichage
+          })));} else {
           console.error('Erreur lors de la récupération des services:', data.message);
         }
       } catch (error) {
@@ -91,9 +95,15 @@ const MapView: React.FC = () => {
     fetchServices();
   }, []);
 
-  const handleMarkerClick = (service: Service) => {
-    setSelectedMarker(service);
+  const handleMarkerClick = async (service: Service) => {
+    try {
+      const address = await reverseGeocode(service.latitude, service.longitude);
+      setSelectedMarker({ ...service, address }); // Store the address in the marker state
+    } catch (error) {
+      console.error('Error fetching address:', error);
+    }
   };
+  
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (event.latLng) {
@@ -106,6 +116,29 @@ const MapView: React.FC = () => {
   const handleCloseInfoWindow = () => {
     setSelectedMarker(null);
   };
+
+  const reverseGeocode = (lat: number, lng: number): Promise<string> => {
+    const geocoder = new window.google.maps.Geocoder();
+  
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results.length > 0) {
+          // Loop through the results to find a valid formatted address (excluding Plus Codes)
+          for (const result of results) {
+            if (!result.plus_code) { // Exclude Plus Codes
+              resolve(result.formatted_address); // Return the standard formatted address
+              return;
+            }
+          }
+          resolve(results[0].formatted_address); // Fallback to the first result if no others found
+        } else {
+          reject('Unable to retrieve address');
+        }
+      });
+    });
+  };
+  
+  
 
   // Fonction pour créer une réservation si l'utilisateur est médecin
   const handleCreateReservation = async () => {
@@ -166,7 +199,7 @@ const MapView: React.FC = () => {
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={userLocation}
-        zoom={10}
+        zoom={12}
         onClick={handleMapClick} // Capture des clics sur la carte
         options={{
           streetViewControl: false,
@@ -180,17 +213,19 @@ const MapView: React.FC = () => {
           />
         ))}
 
-        {selectedMarker && (
-          <InfoWindow
-            position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
-            onCloseClick={handleCloseInfoWindow}
-          >
-            <div>
-              <h3 className="font-bold">{selectedMarker.nom}</h3>
-              <p>Localisation : {selectedMarker.latitude}, {selectedMarker.longitude}</p>
-            </div>
-          </InfoWindow>
-        )}
+          {selectedMarker && (
+            <InfoWindow
+              position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
+              onCloseClick={handleCloseInfoWindow}
+            >
+              <div>
+                <h3 className="font-bold">{selectedMarker.nom}</h3>
+                <p>Adresse : {selectedMarker.address || 'Adresse indisponible'}</p> {/* Display the address */}
+                <p>Date : {selectedMarker.date}</p>
+              </div>
+            </InfoWindow>
+          )}
+
       </GoogleMap>
 
       {/* Affichage conditionnel des boutons pour les médecins */}

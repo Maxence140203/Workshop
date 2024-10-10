@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Register_medecin from './pages/Register_medecin';
+import NotFoundPage from './pages/404';  // Assure-toi que le chemin est correct
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -19,10 +20,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/map" element={<Map />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register_medecin" element={<Register_medecin />} />
+            {/* Ajout de la route 404 */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
       </div>

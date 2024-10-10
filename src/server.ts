@@ -1,22 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express';
-import https from 'https'; // Pour HTTPS
-import fs from 'fs';       // Pour lire les certificats SSL
 import mysql from 'mysql2/promise';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import path from 'path';
-import { fileURLToPath } from 'url'; // Utilisé pour obtenir __dirname
-
-// Créer __dirname pour les modules ES
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'https://localhost:5173', // Autorise uniquement votre frontend
+  origin: 'http://localhost:5173', // Autorise uniquement votre frontend
   credentials: true, // Si vous utilisez des cookies
 }));
 
@@ -29,13 +20,6 @@ const dbConfig = {
   password: 'root',
   database: 'utilisateurs',
   port: 3306,
-};
-
-// Charger les certificats SSL auto-signés ou Let's Encrypt
-
-const sslOptions = {
-  key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),  // Remplacer par le chemin vers votre clé privée
-  cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')), // Remplacer par le chemin vers votre certificat
 };
 
 // Route d'enregistrement
@@ -266,10 +250,12 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
 app.get('/api/services', async (req: Request, res: Response) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute<any[]>('SELECT id, latitude, longitude, date FROM user_reservations');
+    const [rows] = await connection.execute<any[]>(
+      'SELECT id, latitude, longitude, date, nom FROM user_reservations'
+    );
     connection.end();
 
-    // Envoyer les données sous la forme d'une réponse JSON
+    // Envoyer les données sous la forme d'une réponse JSON avec la nouvelle colonne 'nom'
     res.json({ success: true, services: rows });
   } catch (error) {
     console.error('Erreur lors de la récupération des réservations:', error);
@@ -278,21 +264,22 @@ app.get('/api/services', async (req: Request, res: Response) => {
 });
 
 
+
 app.post('/api/reservations', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
-  const { id_user, latitude, longitude, date } = req.body;
+  const { id_user, latitude, longitude, date, nom } = req.body;  // Ajout du champ nom
 
   console.log('Début de la création de la réservation...');
-  console.log('Données reçues :', { id_user, latitude, longitude, date });
+  console.log('Données reçues :', { id_user, latitude, longitude, date, nom });
 
   try {
     // Connexion à la base de données
     const connection = await mysql.createConnection(dbConfig);
     console.log('Connexion à la base de données réussie.');
 
-    // Exécution de la requête d'insertion
+    // Exécution de la requête d'insertion avec le champ nom
     const [result] = await connection.execute(
-      'INSERT INTO user_reservations (id_user, date, latitude, longitude) VALUES (?, ?, ?, ?)',
-      [id_user, date, latitude, longitude]  // Séparez les valeurs latitude et longitude
+      'INSERT INTO user_reservations (id_user, date, latitude, longitude, nom) VALUES (?, ?, ?, ?, ?)',
+      [id_user, date, latitude, longitude, nom]  // Ajout de la colonne 'nom'
     );
     console.log('Réservation insérée dans la base de données, résultat :', result);
 
@@ -312,8 +299,12 @@ app.post('/api/reservations', authenticateJWT, async (req: Request, res: Respons
 
 
 
+// Route 404
+app.use((_req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
 
 // Start server
-https.createServer(sslOptions, app).listen(3001, () => {
-  console.log('Server is running securely on port 3001 via HTTPS');
+app.listen(3001, '0.0.0.0', () => {
+  console.log('Server is running on port 3001');
 });

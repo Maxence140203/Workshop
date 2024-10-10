@@ -138,6 +138,7 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
         nom: user.nom,
         prenom: user.prenom,
         email: user.email,
+        medecin: user.medecin,  // Ajout de l'indicateur "médecin"
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
@@ -233,9 +234,10 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
           email: user.email,
           telephone: user.telephone,
           adresse: user.adresse,
+          medecin: user.medecin,  // Ajout de la propriété medecin
           reservations: reservations.length ? reservations : [],
         },
-      });
+      });      
 
       connection.end();
     } catch (error) {
@@ -248,7 +250,7 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
 app.get('/api/services', async (req: Request, res: Response) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute<any[]>('SELECT * FROM services');
+    const [rows] = await connection.execute<any[]>('SELECT * FROM user_reservations');
     connection.end();
 
     res.json({ success: true, services: rows });
@@ -271,7 +273,7 @@ app.post('/api/reservations', authenticateJWT, async (req: Request, res: Respons
 
     // Exécution de la requête d'insertion
     const [result] = await connection.execute(
-      'INSERT INTO user_reservations (id_user, date, lieu) VALUES (?, ?, ?)',
+      'INSERT INTO user_reservations (id_user, date, latitude, longitude) VALUES (?, ?, ?, ?)',
       [id_user, date, `${latitude}, ${longitude}`]
     );
     console.log('Réservation insérée dans la base de données, résultat :', result);

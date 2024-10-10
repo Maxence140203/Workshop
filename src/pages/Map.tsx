@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import DatePicker from 'react-datepicker';  // Ajoute un package de sélection de date
-import 'react-datepicker/dist/react-datepicker.css'; // Style du date picker
+import DatePicker from 'react-datepicker';  // Importation de la bibliothèque de datepicker
+import 'react-datepicker/dist/react-datepicker.css'; // Importation du style pour le datepicker
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';
 
@@ -27,16 +27,16 @@ const MapView: React.FC = () => {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<Service | null>(null);
   const [services, setServices] = useState<Service[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);  // Nouvelle gestion de date
-  const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null); // Gestion des clics sur la carte
+  const [user, setUser] = useState<any>(null);  // Stockage des données utilisateur
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);  // Gestion de la date
+  const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null); // Récupération des clics sur la carte
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
-  // Charger les données utilisateur
+  // Chargement des données utilisateur pour vérifier s'il est médecin
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -48,14 +48,14 @@ const MapView: React.FC = () => {
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            setUser(data.user);
+            setUser(data.user);  // Stockage des informations utilisateur
           }
         })
         .catch(err => console.error('Erreur lors de la récupération du profil:', err));
     }
   }, []);
 
-  // Charger les services
+  // Chargement des services
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -90,18 +90,18 @@ const MapView: React.FC = () => {
     setSelectedMarker(null);
   };
 
-  // Fonction pour créer une réservation
+  // Fonction pour créer une réservation si l'utilisateur est médecin
   const handleCreateReservation = async () => {
     if (clickedLocation && user && user.medecin && selectedDate) {
       console.log('Début de la création de réservation...');
       console.log('Données utilisateur:', user);
       console.log('Données de localisation:', clickedLocation);
       console.log('Date sélectionnée:', selectedDate.toISOString().split('T')[0]);
-  
+
       try {
         const token = localStorage.getItem('token');
         console.log('Token d\'authentification:', token);
-  
+
         const response = await fetch('http://localhost:3001/api/reservations', {
           method: 'POST',
           headers: {
@@ -115,12 +115,10 @@ const MapView: React.FC = () => {
             date: selectedDate.toISOString().split('T')[0],  // Formatage de la date
           }),
         });
-  
-        console.log('Réponse du serveur reçue:', response);
-  
+
         const data = await response.json();
         console.log('Données renvoyées par le serveur:', data);
-  
+
         if (data.success) {
           alert('Réservation créée avec succès');
           console.log('Réservation créée avec succès');
@@ -134,11 +132,9 @@ const MapView: React.FC = () => {
       console.log('Conditions non remplies pour créer une réservation.');
       console.log('clickedLocation:', clickedLocation);
       console.log('user:', user);
-      console.log('user.medecin:', user.medecin);
       console.log('selectedDate:', selectedDate);
     }
   };
-  
 
   if (!isLoaded) return <div>Chargement...</div>;
 
@@ -149,7 +145,7 @@ const MapView: React.FC = () => {
         mapContainerStyle={mapContainerStyle}
         center={center}
         zoom={6}
-        onClick={handleMapClick} // Capturer les clics sur la carte
+        onClick={handleMapClick} // Capture des clics sur la carte
         options={{
           streetViewControl: false,
         }}
@@ -170,28 +166,30 @@ const MapView: React.FC = () => {
             <div>
               <h3 className="font-bold">{selectedMarker.nom}</h3>
               <p>{selectedMarker.type === 'medical' ? 'Service Médical' : 'Service Administratif'}</p>
+
+              {/* Affichage conditionnel des boutons pour les médecins */}
               {user && user.medecin && clickedLocation && (
                 <div>
                   <p>Localisation : {clickedLocation.latitude}, {clickedLocation.longitude}</p>
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={(date: Date | null) => setSelectedDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    className="mt-2"
+                    placeholderText="Choisissez une date"
+                  />
+                  <button
+                    className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                    onClick={handleCreateReservation}
+                  >
+                    Créer une réservation
+                  </button>
                 </div>
               )}
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
-      <button
-        className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
-        onClick={handleCreateReservation}
-      >
-        Créer une réservation
-      </button>
-      <DatePicker
-        selected={selectedDate}
-        onChange={(date: Date | null, event?: React.SyntheticEvent<any>) => setSelectedDate(date)}
-        dateFormat="yyyy-MM-dd"
-        className="mt-2"
-        placeholderText="Choisissez une date"
-      />
     </div>
   );
 };

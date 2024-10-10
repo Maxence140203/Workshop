@@ -258,6 +258,23 @@ app.get('/api/services', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/reservations', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
+  const { id_soignant, lieu, date } = req.body;
+
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    await connection.execute(
+      'INSERT INTO user_reservations (id_user, date, lieu) VALUES (?, ?, ?)',
+      [id_soignant, date, lieu]
+    );
+    connection.end();
+    res.json({ success: true, message: 'Réservation créée avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de la création de la réservation:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la création de la réservation' });
+  }
+});
+
 
 // Start server
 app.listen(3001, '0.0.0.0', () => {

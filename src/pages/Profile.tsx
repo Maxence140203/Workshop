@@ -7,8 +7,6 @@ const Profile: React.FC = () => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [notificationPreferences, setNotificationPreferences] = useState({
     email: true,
-    sms: false,
-    push: true,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

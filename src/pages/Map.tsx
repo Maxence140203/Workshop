@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { Ambulance, Briefcase } from 'lucide-react';
+import DatePicker from 'react-datepicker';  // Ajoute un package de sélection de date
+import 'react-datepicker/dist/react-datepicker.css'; // Style du date picker
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';
 
 type Service = {
   id: number;
-  nom: string; // Mise à jour pour refléter 'nom' au lieu de 'name'
+  nom: string;
   type: 'medical' | 'administrative';
   latitude: number;
   longitude: number;
@@ -25,20 +26,43 @@ const center = {
 const MapView: React.FC = () => {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<Service | null>(null);
-  const [services, setServices] = useState<Service[]>([]); // Liste des services récupérés de la BDD
+  const [services, setServices] = useState<Service[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);  // Nouvelle gestion de date
+  const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null); // Gestion des clics sur la carte
+
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
+  // Charger les données utilisateur
   useEffect(() => {
-    // Requête vers votre API pour récupérer les points de services
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('http://localhost:3001/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            setUser(data.user);
+          }
+        })
+        .catch(err => console.error('Erreur lors de la récupération du profil:', err));
+    }
+  }, []);
+
+  // Charger les services
+  useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/services'); // URL de l'API côté backend
+        const response = await fetch('http://localhost:3001/api/services');
         const data = await response.json();
         if (data.success) {
-          setServices(data.services); // Stocker les services récupérés
+          setServices(data.services);
         } else {
           console.error('Erreur lors de la récupération des services:', data.message);
         }
@@ -54,8 +78,46 @@ const MapView: React.FC = () => {
     setSelectedMarker(service);
   };
 
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    if (event.latLng) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      setClickedLocation({ latitude: lat, longitude: lng });
+    }
+  };
+
   const handleCloseInfoWindow = () => {
     setSelectedMarker(null);
+  };
+
+  // Fonction pour créer une réservation
+  const handleCreateReservation = async () => {
+    if (clickedLocation && user && user.medecin && selectedDate) {
+      try {
+        const response = await fetch('http://localhost:3001/api/reservations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            id_soignant: user.id,
+            latitude: clickedLocation.latitude,
+            longitude: clickedLocation.longitude,
+            date: selectedDate.toISOString().split('T')[0],  // Formatage de la date
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('Réservation créée avec succès');
+        } else {
+          console.error('Erreur lors de la création de la réservation:', data.message);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la requête de réservation:', error);
+      }
+    }
   };
 
   if (!isLoaded) return <div>Chargement...</div>;
@@ -63,41 +125,22 @@ const MapView: React.FC = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">Carte des Services</h1>
-      <div className="mb-4">
-        <button
-          className={`mr-2 px-4 py-2 rounded ${selectedService === 'medical' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => setSelectedService(selectedService === 'medical' ? null : 'medical')}
-        >
-          Services Médicaux
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${selectedService === 'administrative' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => setSelectedService(selectedService === 'administrative' ? null : 'administrative')}
-        >
-          Services Administratifs
-        </button>
-      </div>
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={center}
         zoom={6}
+        onClick={handleMapClick} // Capturer les clics sur la carte
         options={{
-          streetViewControl: false, // Désactiver Street View
+          streetViewControl: false,
         }}
       >
-        {services
-          .filter(service => !selectedService || service.type === selectedService)
-          .map(service => (
-            <Marker
-              key={service.id}
-              position={{ lat: service.latitude, lng: service.longitude }}
-              onClick={() => handleMarkerClick(service)}
-              icon={{
-                url: service.type === 'medical' ? '/ambulance-icon.svg' : '/briefcase-icon.svg',
-                scaledSize: new window.google.maps.Size(30, 30),
-              }}
-            />
-          ))}
+        {services.map(service => (
+          <Marker
+            key={service.id}
+            position={{ lat: service.latitude, lng: service.longitude }}
+            onClick={() => handleMarkerClick(service)}
+          />
+        ))}
 
         {selectedMarker && (
           <InfoWindow
@@ -105,8 +148,26 @@ const MapView: React.FC = () => {
             onCloseClick={handleCloseInfoWindow}
           >
             <div>
-              <h3 className="font-bold">{selectedMarker.nom}</h3> {/* Mise à jour pour utiliser 'nom' */}
+              <h3 className="font-bold">{selectedMarker.nom}</h3>
               <p>{selectedMarker.type === 'medical' ? 'Service Médical' : 'Service Administratif'}</p>
+              {user && user.medecin && clickedLocation && (
+                <div>
+                  <p>Localisation : {clickedLocation.latitude}, {clickedLocation.longitude}</p>
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={(date: Date) => setSelectedDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    className="mt-2"
+                    placeholderText="Choisissez une date"
+                  />
+                  <button
+                    className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                    onClick={handleCreateReservation}
+                  >
+                    Créer une réservation
+                  </button>
+                </div>
+              )}
             </div>
           </InfoWindow>
         )}

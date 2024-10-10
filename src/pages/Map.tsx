@@ -31,6 +31,7 @@ const MapView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);  // Gestion de la date
   const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null); // Récupération des clics sur la carte
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [formData, setFormData] = useState({ nom: ''}); // Stockage des données du formulaire});
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -167,7 +168,8 @@ const MapView: React.FC = () => {
             id_user: user.id,
             latitude: clickedLocation.latitude,
             longitude: clickedLocation.longitude,
-            date: selectedDate.toISOString().split('T')[0],  // Formatage de la date
+            date: selectedDate.toISOString().split('T')[0],  // Formatage de la date,
+            nom: formData.nom,
           }),
         });
 
@@ -190,6 +192,11 @@ const MapView: React.FC = () => {
       console.log('selectedDate:', selectedDate);
     }
   };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  }
 
   if (!isLoaded) return <div>Chargement...</div>;
 
@@ -244,6 +251,15 @@ const MapView: React.FC = () => {
           >
             Créer une réservation
           </button>
+          <input
+            type="text"
+            id="nom"
+            name="nom"
+            value={formData.nom}
+            onChange={handleChange}
+            className="mt-2"
+            required
+          />
         </div>
       )}
     </div>

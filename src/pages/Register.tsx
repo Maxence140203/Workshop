@@ -12,10 +12,17 @@ const Register: React.FC = () => {
     age: '',
     email: '',
     password: '',
+    confirmPassword: '',  // Confirmation du mot de passe
     telephone: '',
     adresse: '',
   });
   const [error, setError] = useState<string | null>(null);
+
+  // Fonction de validation du mot de passe
+  const validatePassword = (password: string) => {
+    const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordPolicy.test(password);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,6 +32,16 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!validatePassword(formData.password)) {
+      setError('Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un caractère spécial.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
 
     try {
       const response = await fetch('http://localhost:3001/api/register', {
@@ -56,10 +73,7 @@ const Register: React.FC = () => {
     <div className="max-w-md mx-auto">
       {/* Lien pour les médecins */}
       <div className="mb-4 text-center">
-        <Link
-          to="/register_medecin"
-          className="text-blue-600 hover:underline"
-        >
+        <Link to="/register_medecin" className="text-blue-600 hover:underline">
           Vous êtes médecin ? Rejoignez-nous !
         </Link>
       </div>
@@ -141,6 +155,26 @@ const Register: React.FC = () => {
               id="password"
               name="password"
               value={formData.password}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
+              required
+            />
+            <Lock className="absolute left-3 top-2 text-gray-500" />
+            <p className="text-sm text-gray-600 mt-1">
+              Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.
+            </p>
+          </div>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">
+            Confirmer le mot de passe
+          </label>
+          <div className="relative">
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pl-10"
               required

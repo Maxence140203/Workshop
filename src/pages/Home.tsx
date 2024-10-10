@@ -33,7 +33,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="text-center">
-      <h1 className="text-4xl font-bold mb-8">Bienvenue sur Medic Mobile55555555</h1>
+      <h1 className="text-4xl font-bold mb-8">Bienvenue sur Medic Mobile</h1>
       <p className="text-xl mb-8">Gérez et accédez aux services médicaux mobiles en temps réel</p>
 
       {/* Cookie Consent Banner */}

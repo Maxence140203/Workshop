@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Ambulance, User, LogIn, Truck, MapPin } from 'lucide-react';
+import { Ambulance, User, LogIn, MapPin } from 'lucide-react';
 
 const Header: React.FC = () => {
   const [session, setSession] = useState<{ loggedIn: boolean } | null>(null);
@@ -18,7 +18,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-blue-600 text-white">
+    <header style={{ backgroundColor: "#06DE7F" }} className="text-white">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold flex items-center">
           <Ambulance className="mr-2" />

@@ -93,12 +93,20 @@ const MapView: React.FC = () => {
   // Fonction pour créer une réservation
   const handleCreateReservation = async () => {
     if (clickedLocation && user && user.medecin && selectedDate) {
+      console.log('Début de la création de réservation...');
+      console.log('Données utilisateur:', user);
+      console.log('Données de localisation:', clickedLocation);
+      console.log('Date sélectionnée:', selectedDate.toISOString().split('T')[0]);
+  
       try {
+        const token = localStorage.getItem('token');
+        console.log('Token d\'authentification:', token);
+  
         const response = await fetch('http://localhost:3001/api/reservations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             id_soignant: user.id,
@@ -107,18 +115,30 @@ const MapView: React.FC = () => {
             date: selectedDate.toISOString().split('T')[0],  // Formatage de la date
           }),
         });
-
+  
+        console.log('Réponse du serveur reçue:', response);
+  
         const data = await response.json();
+        console.log('Données renvoyées par le serveur:', data);
+  
         if (data.success) {
           alert('Réservation créée avec succès');
+          console.log('Réservation créée avec succès');
         } else {
           console.error('Erreur lors de la création de la réservation:', data.message);
         }
       } catch (error) {
         console.error('Erreur lors de la requête de réservation:', error);
       }
+    } else {
+      console.log('Conditions non remplies pour créer une réservation.');
+      console.log('clickedLocation:', clickedLocation);
+      console.log('user:', user);
+      console.log('user.medecin:', user.medecin);
+      console.log('selectedDate:', selectedDate);
     }
   };
+  
 
   if (!isLoaded) return <div>Chargement...</div>;
 
@@ -153,25 +173,25 @@ const MapView: React.FC = () => {
               {user && user.medecin && clickedLocation && (
                 <div>
                   <p>Localisation : {clickedLocation.latitude}, {clickedLocation.longitude}</p>
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(date: Date) => setSelectedDate(date)}
-                    dateFormat="yyyy-MM-dd"
-                    className="mt-2"
-                    placeholderText="Choisissez une date"
-                  />
-                  <button
-                    className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                    onClick={handleCreateReservation}
-                  >
-                    Créer une réservation
-                  </button>
                 </div>
               )}
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
+      <button
+        className="mt-2 bg-blue-500 text-white px-2 py-1 rounded text-sm"
+        onClick={handleCreateReservation}
+      >
+        Créer une réservation
+      </button>
+      <DatePicker
+        selected={selectedDate}
+        onChange={(date: Date | null, event?: React.SyntheticEvent<any>) => setSelectedDate(date)}
+        dateFormat="yyyy-MM-dd"
+        className="mt-2"
+        placeholderText="Choisissez une date"
+      />
     </div>
   );
 };

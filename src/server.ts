@@ -259,21 +259,37 @@ app.get('/api/services', async (req: Request, res: Response) => {
 });
 
 app.post('/api/reservations', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
-  const { id_soignant, lieu, date } = req.body;
+  const { id_user, latitude, longitude, date } = req.body;
+
+  console.log('Début de la création de la réservation...');
+  console.log('Données reçues :', { id_user, latitude, longitude, date });
 
   try {
+    // Connexion à la base de données
     const connection = await mysql.createConnection(dbConfig);
-    await connection.execute(
+    console.log('Connexion à la base de données réussie.');
+
+    // Exécution de la requête d'insertion
+    const [result] = await connection.execute(
       'INSERT INTO user_reservations (id_user, date, lieu) VALUES (?, ?, ?)',
-      [id_soignant, date, lieu]
+      [id_user, date, `${latitude}, ${longitude}`]
     );
+    console.log('Réservation insérée dans la base de données, résultat :', result);
+
+    // Fermeture de la connexion
     connection.end();
+    console.log('Connexion à la base de données fermée.');
+
+    // Réponse réussie
     res.json({ success: true, message: 'Réservation créée avec succès' });
+    console.log('Réponse envoyée avec succès.');
   } catch (error) {
-    console.error('Erreur lors de la création de la réservation:', error);
+    // Gestion d'erreur
+    console.error('Erreur lors de la création de la réservation :', error);
     res.status(500).json({ success: false, message: 'Erreur lors de la création de la réservation' });
   }
 });
+
 
 
 // Start server

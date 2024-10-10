@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from 'react-datepicker';  // Importation de la bibliothèque de datepicker
+import 'react-datepicker/dist/react-datepicker.css'; // Importation du style pour le datepicker
 
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';  // Remplace par ta clé API Google Maps
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';
 
 type Service = {
   id: number;
@@ -17,8 +17,7 @@ const mapContainerStyle = {
   height: '400px',
 };
 
-// Valeur de centre par défaut en France si la géolocalisation échoue
-const defaultCenter = {
+const center = {
   lat: 46.603354,
   lng: 1.888334,
 };
@@ -26,10 +25,10 @@ const defaultCenter = {
 const MapView: React.FC = () => {
   const [selectedMarker, setSelectedMarker] = useState<Service | null>(null);
   const [services, setServices] = useState<Service[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(defaultCenter); // Utilise une valeur par défaut
+  const [user, setUser] = useState<any>(null);  // Stockage des données utilisateur
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);  // Gestion de la date
+  const [clickedLocation, setClickedLocation] = useState<{ latitude: number, longitude: number } | null>(null); // Récupération des clics sur la carte
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -108,6 +107,7 @@ const MapView: React.FC = () => {
     setSelectedMarker(null);
   };
 
+  // Fonction pour créer une réservation si l'utilisateur est médecin
   const handleCreateReservation = async () => {
     if (user && user.medecin && selectedDate) {
       if (!clickedLocation) {
@@ -115,8 +115,15 @@ const MapView: React.FC = () => {
         return;
       }
 
+      console.log('Début de la création de réservation...');
+      console.log('Données utilisateur:', user);
+      console.log('Données de localisation:', clickedLocation);
+      console.log('Date sélectionnée:', selectedDate.toISOString().split('T')[0]);
+
       try {
         const token = localStorage.getItem('token');
+        console.log('Token d\'authentification:', token);
+
         const response = await fetch('http://localhost:3001/api/reservations', {
           method: 'POST',
           headers: {
@@ -127,11 +134,12 @@ const MapView: React.FC = () => {
             id_user: user.id,
             latitude: clickedLocation.latitude,
             longitude: clickedLocation.longitude,
-            date: selectedDate.toISOString().split('T')[0],
+            date: selectedDate.toISOString().split('T')[0],  // Formatage de la date
           }),
         });
 
         const data = await response.json();
+        console.log('Données renvoyées par le serveur:', data);
 
         if (data.success) {
           alert('Réservation créée avec succès');
@@ -144,6 +152,9 @@ const MapView: React.FC = () => {
       }
     } else {
       console.log('Conditions non remplies pour créer une réservation.');
+      console.log('clickedLocation:', clickedLocation);
+      console.log('user:', user);
+      console.log('selectedDate:', selectedDate);
     }
   };
 
@@ -154,7 +165,7 @@ const MapView: React.FC = () => {
       <h1 className="text-3xl font-bold mb-4">Carte des Services</h1>
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
-        center={userLocation}  // Utilise la localisation de l'utilisateur ou une valeur par défaut
+        center={userLocation}
         zoom={10}
         onClick={handleMapClick} // Capture des clics sur la carte
         options={{

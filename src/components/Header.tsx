@@ -18,7 +18,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header style={{ backgroundColor: "#00B163" }} className="text-white">
+    <header style={{ backgroundColor: "#00ae62" }} className="text-white">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold flex items-center">
           <Ambulance className="mr-2" />

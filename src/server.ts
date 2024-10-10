@@ -1,13 +1,16 @@
 import express, { Request, Response, NextFunction } from 'express';
+import https from 'https'; // Pour HTTPS
+import fs from 'fs';       // Pour lire les certificats SSL
 import mysql from 'mysql2/promise';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import path from 'path';
 
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:5173', // Autorise uniquement votre frontend
+  origin: 'https://localhost:5173', // Autorise uniquement votre frontend
   credentials: true, // Si vous utilisez des cookies
 }));
 
@@ -20,6 +23,13 @@ const dbConfig = {
   password: 'root',
   database: 'utilisateurs',
   port: 3306,
+};
+
+// Charger les certificats SSL auto-signés ou Let's Encrypt
+
+const sslOptions = {
+  key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),  // Remplacer par le chemin vers votre clé privée
+  cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')), // Remplacer par le chemin vers votre certificat
 };
 
 // Route d'enregistrement
@@ -298,6 +308,6 @@ app.post('/api/reservations', authenticateJWT, async (req: Request, res: Respons
 
 
 // Start server
-app.listen(3001, '0.0.0.0', () => {
-  console.log('Server is running on port 3001');
+https.createServer(sslOptions, app).listen(3001, () => {
+  console.log('Server is running securely on port 3001 via HTTPS');
 });

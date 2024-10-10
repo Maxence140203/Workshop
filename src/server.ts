@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://mediaplex.black-stockage.fr:8080', // Autorise uniquement votre frontend
+  origin: 'http://localhost:5173', // Autorise uniquement votre frontend
   credentials: true, // Si vous utilisez des cookies
 }));
 

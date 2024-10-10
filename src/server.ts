@@ -250,15 +250,17 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
 app.get('/api/services', async (req: Request, res: Response) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute<any[]>('SELECT * FROM user_reservations');
+    const [rows] = await connection.execute<any[]>('SELECT id, latitude, longitude, date FROM user_reservations');
     connection.end();
 
+    // Envoyer les données sous la forme d'une réponse JSON
     res.json({ success: true, services: rows });
   } catch (error) {
-    console.error('Erreur lors de la récupération des services:', error);
+    console.error('Erreur lors de la récupération des réservations:', error);
     res.status(500).json({ success: false, message: 'Erreur serveur' });
   }
 });
+
 
 app.post('/api/reservations', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
   const { id_user, latitude, longitude, date } = req.body;
@@ -274,7 +276,7 @@ app.post('/api/reservations', authenticateJWT, async (req: Request, res: Respons
     // Exécution de la requête d'insertion
     const [result] = await connection.execute(
       'INSERT INTO user_reservations (id_user, date, latitude, longitude) VALUES (?, ?, ?, ?)',
-      [id_user, date, `${latitude}, ${longitude}`]
+      [id_user, date, latitude, longitude]  // Séparez les valeurs latitude et longitude
     );
     console.log('Réservation insérée dans la base de données, résultat :', result);
 
@@ -291,6 +293,7 @@ app.post('/api/reservations', authenticateJWT, async (req: Request, res: Respons
     res.status(500).json({ success: false, message: 'Erreur lors de la création de la réservation' });
   }
 });
+
 
 
 

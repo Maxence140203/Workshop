@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Phone, UserPlus, User, Mail, Lock, MapPin } from 'lucide-react';
+import { Phone, UserPlus, User, Mail, Lock, MapPin, Stethoscope } from 'lucide-react'; // Ajout de l'icône pour médecin
 import { useAuthStore } from '../stores/authStore';
 
-const Register: React.FC = () => {
+const RegisterMedecin: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ const Register: React.FC = () => {
     password: '',
     telephone: '',
     adresse: '',
+    medecin: true, // Champ supplémentaire pour identifier l'utilisateur en tant que médecin
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ const Register: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/register', {
+      const response = await fetch('http://localhost:3001/api/register_medecin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,16 +55,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto">
-      {/* Lien pour les médecins */}
-      <div className="mb-4 text-center">
-        <Link
-          to="/register_medecin"
-          className="text-blue-600 hover:underline"
-        >
-          Vous êtes médecin ? Rejoignez-nous !
-        </Link>
-      </div>
-      <h1 className="text-3xl font-bold mb-8 text-center">Créer un compte</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">Créer un compte Médecin</h1>
       <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-8">
         <div className="mb-4">
           <label htmlFor="nom" className="block text-gray-700 text-sm font-bold mb-2">
@@ -167,7 +159,7 @@ const Register: React.FC = () => {
         </div>
         <div className="mb-4">
           <label htmlFor="adresse" className="block text-gray-700 text-sm font-bold mb-2">
-            Adresse
+            Vehicule
           </label>
           <div className="relative">
             <input
@@ -182,6 +174,27 @@ const Register: React.FC = () => {
             <MapPin className="absolute left-3 top-2 text-gray-500" />
           </div>
         </div>
+
+        {/* Identification du médecin */}
+        <div className="mb-4">
+          <label htmlFor="medecin" className="block text-gray-700 text-sm font-bold mb-2">
+            Êtes-vous médecin ?
+          </label>
+          <div className="relative">
+            <input
+              type="checkbox"
+              id="medecin"
+              name="medecin"
+              checked={formData.medecin}
+              onChange={(e) => setFormData({ ...formData, medecin: e.target.checked })}
+              className="mr-2"
+              disabled
+            />
+            <Stethoscope className="text-gray-500 inline-block" />
+            <span className="ml-2">Oui, je suis médecin</span>
+          </div>
+        </div>
+
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="flex items-center justify-between">
           <button
@@ -189,7 +202,7 @@ const Register: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
           >
             <UserPlus className="mr-2" />
-            Register
+            S'inscrire
           </button>
           <Link to="/login" className="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
             Vous avez déjà un compte ?
@@ -200,4 +213,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register;
+export default RegisterMedecin;

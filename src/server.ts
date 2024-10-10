@@ -60,6 +60,47 @@ app.post('/api/register', async (req: Request, res: Response): Promise<void> => 
   }
 });
 
+app.post('/api/register_medecin', async (req: Request, res: Response): Promise<void> => {
+  const { nom, prenom, age, email, password, telephone, adresse } = req.body;
+
+  try {
+    console.log('Données reçues pour inscription médecin:', { nom, prenom, age, email, password, telephone, adresse });
+
+    const connection = await mysql.createConnection(dbConfig);
+    console.log('Connexion à la base de données réussie');
+
+    // Vérifier si l'utilisateur existe déjà
+    const [existingUser] = await connection.execute<any[]>(
+      'SELECT * FROM user_info WHERE email = ?',
+      [email]
+    );
+
+    if (existingUser.length > 0) {
+      console.log('Médecin existant trouvé');
+      res.status(400).json({ success: false, message: 'Médecin déjà existant' });
+      return;
+    }
+
+    // Hacher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Mot de passe haché:', hashedPassword);
+
+    // Insérer les données du médecin avec l'indicateur "médecin"
+    await connection.execute(
+      'INSERT INTO user_info (nom, prenom, age, email, password, telephone, adresse, medecin) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      [nom, prenom, age, email, hashedPassword, telephone, adresse]
+    );
+
+    connection.end();
+    console.log('Médecin enregistré avec succès');
+    res.json({ success: true, message: 'Médecin enregistré avec succès' });
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement du médecin:', error);
+    res.status(500).json({ success: false, message: 'Erreur de base de données' });
+  }
+});
+
+
 // Route de connexion (Login Route)
 app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
@@ -178,7 +219,7 @@ app.get('/api/profile', authenticateJWT, async (req: Request & { user?: any }, r
       console.log('User found:', user);
 
       const [reservations] = await connection.execute<any[]>(
-        'SELECT * FROM user_reservations WHERE id_patient = ?',
+        'SELECT * FROM user_reservations WHERE id_user = ?',
         [user.id]
       );
 

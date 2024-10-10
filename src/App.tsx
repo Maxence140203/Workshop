@@ -6,6 +6,7 @@ import Map from './pages/Map';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Register_medecin from './pages/Register_medecin';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -21,6 +22,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register_medecin" element={<Register_medecin />} />
           </Routes>
         </main>
       </div>

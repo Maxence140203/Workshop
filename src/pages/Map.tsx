@@ -3,6 +3,8 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-map
 import DatePicker from 'react-datepicker';  // Importation de la bibliothèque de datepicker
 import 'react-datepicker/dist/react-datepicker.css'; // Importation du style pour le datepicker
 import { Geocoder } from '@react-google-maps/api';
+//comment bypass les demandes de permissions de localisation (sans certificat ssl)
+
 
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCQLhFSq03QDVmUeyIVpTSV2KB93LJgioc';

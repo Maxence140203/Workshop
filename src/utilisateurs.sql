@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost:3306
--- Généré le : jeu. 10 oct. 2024 à 19:13
+-- Généré le : ven. 11 oct. 2024 à 09:43
 -- Version du serveur : 5.7.24
 -- Version de PHP : 8.3.1
 
@@ -75,7 +75,9 @@ CREATE TABLE `user_info` (
 INSERT INTO `user_info` (`id`, `medecin`, `nom`, `prenom`, `age`, `email`, `password`, `telephone`, `adresse`) VALUES
 (1, 0, 'test', 'test', 12, 'test@test.com', '$2b$10$CUzqoH/YBVJhBvBfSBdejOibMc2taltql6rR3mHV4TpkaTAx9beSW', '0606060606', 'test'),
 (2, 0, 'test2', 'test2', 13, 'test2@test2.com', '$2b$10$uF3L.cKJDqt283EAwsByS.p7EcFU01N0HnBGyxIWX.6mekXDCK7xC', '0707070707', 'test2'),
-(3, 1, 'Mr', 'Mr', 52, 'mr@mr.com', '$2b$10$WvOKDYofxycwy6TgRSV9NuMEXgT0Z9EytoLvdFrBUPrExINT3w15u', '0000000000', 'vehicule');
+(3, 1, 'Mr', 'Mr', 52, 'mr@mr.com', '$2b$10$WvOKDYofxycwy6TgRSV9NuMEXgT0Z9EytoLvdFrBUPrExINT3w15u', '0000000000', 'vehicule'),
+(4, 0, 'poizat', 'maxence', 21, 'maxoupoizat@gmail.com', '$2b$10$y.MTF0vt4SJ0pwWNeLX6aeEVtV00KtbHWQEmzL/6dBjeh49UxXL/W', '0000000000', '139 rue de la croix des rosiers, Montpellier'),
+(5, 0, 'poizat', 'maxence', 21, 'test1@test.com', '$2b$10$PP7g7bjI0QAL13tc8SaXCu.tXwcB3YXRfwq8iwTY6N3nrQrKNicIy', '0000000', 'France');
 
 -- --------------------------------------------------------
 
@@ -85,6 +87,7 @@ INSERT INTO `user_info` (`id`, `medecin`, `nom`, `prenom`, `age`, `email`, `pass
 
 CREATE TABLE `user_reservations` (
   `id` int(11) NOT NULL,
+  `nom` varchar(50) NOT NULL,
   `id_user` int(11) NOT NULL,
   `date` date NOT NULL,
   `latitude` float NOT NULL,
@@ -95,12 +98,21 @@ CREATE TABLE `user_reservations` (
 -- Déchargement des données de la table `user_reservations`
 --
 
-INSERT INTO `user_reservations` (`id`, `id_user`, `date`, `latitude`, `longitude`) VALUES
-(1, 3, '2024-10-08', 45.2741, 0.646879),
-(2, 3, '2024-10-08', 45.5252, 1.73269),
-(3, 3, '2024-10-08', 45.4396, 0.110112),
-(4, 3, '2024-10-25', 47.8979, 1.90773),
-(5, 3, '2024-10-14', 46.8019, 4.02509);
+INSERT INTO `user_reservations` (`id`, `nom`, `id_user`, `date`, `latitude`, `longitude`) VALUES
+(1, 'Campagne Vaccination', 3, '2024-10-08', 45.2741, 0.646879),
+(2, 'Tests PCR', 3, '2024-10-08', 45.5252, 1.73269),
+(3, 'Dépistage cancer', 3, '2024-10-08', 45.4396, 0.110112),
+(4, 'Aide à domicile', 3, '2024-10-25', 47.8979, 1.90773),
+(5, 'Aide administrative', 3, '2024-10-14', 46.8019, 4.02509),
+(6, 'Radio à domicile', 3, '2024-10-11', 43.6112, 3.82873),
+(7, 'test', 3, '2024-10-18', 43.6107, 3.83123),
+(8, 'test2', 3, '2024-10-24', 43.611, 3.83028),
+(9, '', 3, '2024-10-23', 43.6111, 3.82955),
+(10, 'testtest', 3, '2024-10-17', 43.6106, 3.83171),
+(11, 'email', 3, '2024-10-17', 43.6105, 3.83219),
+(12, 'test', 3, '2024-10-22', 43.611, 3.83078),
+(13, 'test', 3, '2024-10-23', 43.6107, 3.83079),
+(14, 'Vaccination', 3, '2024-10-15', 45.5472, 2.31165);
 
 --
 -- Index pour les tables déchargées
@@ -134,13 +146,13 @@ ALTER TABLE `user_reservations`
 -- AUTO_INCREMENT pour la table `user_info`
 --
 ALTER TABLE `user_info`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pour la table `user_reservations`
 --
 ALTER TABLE `user_reservations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Contraintes pour les tables déchargées
